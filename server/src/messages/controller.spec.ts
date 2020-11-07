@@ -1,22 +1,23 @@
-import WebSocket from 'ws';
 import { Message, Reminder, State } from './types'
 import { parseMessage, executeMessage, clearAllReminders } from './controller'
 
 // TODO: This isn't an explicit thing. VSCode isn't recognizing these as globals...
-import {describe, expect, test, beforeEach, afterEach} from '@jest/globals'
+import { jest, describe, expect, test, beforeEach } from '@jest/globals'
 
 describe('Messages', function(){
 
     describe('parseMessage', function(){
 
         describe.each([
+
             ['help', 'help'],
             ['remind me to eat in 60 seconds', 'add-reminder'],
             ['in 60 seconds tell me to eat', 'add-reminder'],
             ['list my reminders', 'list-reminders'],
             ['delete all my reminders', 'clear-all-reminders'],
             ['delete reminder 2', 'clear-reminder'],
-            ['tacoz 4 dayz', 'unknown'],
+            ['tacoz 4 dayz', 'unknown']
+
         ])('%s', function(message, expected){
             test(`returns a message kind of ${expected}`, () => {
                 const result = parseMessage(message.toString());
@@ -180,16 +181,18 @@ describe('Messages', function(){
                 nextId: 1,
             }
             
-        })
+        });
 
         test('should remove all existing reminders', function(){
+
             jest.useFakeTimers();
             expect(state.reminders.length).toBe(1)
             clearAllReminders(state);
             expect(state.reminders.length).toBe(0)
             expect(clearTimeout).toHaveBeenCalled()
+
         });
 
-    })
+    });
 
 });
