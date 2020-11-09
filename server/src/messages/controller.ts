@@ -2,10 +2,10 @@ import { ExecutorInterface, MessageInterface, State } from "./types";
 import { Events } from './../events'
 
 // A structure to define and scale out different callbacked based on an
-// Object -> Action relationship. 
+//     Object -> Action relationship. 
 // Objects (the root keys of these structure - generic, reminder, tacos, ...) are 
-//     sourced sent to the lexer. 
-// Actions (the key -> function) pairing are referenced when the lexer has come  
+//     sourced sent to the parser. 
+// Actions (the key -> function) pairing are referenced when the parser has come  
 //     across key words to signal such intent.
 const callbacks: ExecutorInterface = {
     'generic': {
@@ -149,6 +149,10 @@ const callbacks: ExecutorInterface = {
     }
 }
 
+// The parser will construct a `message` object based on what it finds in the input. 
+// This object will have several important keys attached to it but the most important
+// are the `object` and `action` keys. 
+// These keys are used to deterine the callback to run based on the object/action provided.
 export function executeMessage(state: State, message: MessageInterface) {
 
     if (message.object && callbacks[message.object] && callbacks[message.object][message.action]) {
@@ -160,6 +164,7 @@ export function executeMessage(state: State, message: MessageInterface) {
     return callbacks.generic.unknown(state, message);
 }
 
+// Why mess with perfection?
 export function clearAllReminders(state: State) {
   for (const { timeout } of state.reminders) {
     clearTimeout(timeout);
@@ -168,4 +173,6 @@ export function clearAllReminders(state: State) {
   state.reminders = [];
 }
 
+// Takes the root level keys from `callbacks` to feed to the parser
+// and automatically define the object that the system will look for. 
 export const objects = Object.keys(callbacks);

@@ -1,5 +1,8 @@
 import { GenericInterface } from "./types";
 
+// A structure to categorize and define key words.
+// The categories act as actions that are defined 
+// in the controller. 
 const intents: GenericInterface = {
     "greet": {
         keywords: [ "hello", "hi", "hey" ]
@@ -30,8 +33,12 @@ const intents: GenericInterface = {
     }
 }
 
+// A mechanism to flatten and associate keywords with their category
+// keyword1:category,keyworld2:category
 export let intentIndex = '';
 
+// Flatten the object from the keyworlds in a 1 dimensional array
+// for the parser
 const intentCategories = (
     Object
         .keys(intents)
@@ -42,5 +49,4 @@ const intentCategories = (
             return intentSet.keywords;
         })
 );
-
 export const allIntents = [].concat.apply([], intentCategories);

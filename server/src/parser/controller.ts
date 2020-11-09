@@ -5,6 +5,9 @@ import MooConfig from './moo.config'
 const moo = require('moo');
 const lexer = moo.compile(MooConfig);
 
+// While I've been refering this to a parser, moo is technically a lexer
+// Playing with both nearley js and moo (together and separately)
+// Moo offered considerable flexibility on it's own that 
 export default function( input: string ): MessageInterface {
 
     let token;
@@ -21,9 +24,15 @@ export default function( input: string ): MessageInterface {
             continue;
         }
         if (token.type === 'action') {
+
+            // Normalize any of the keywords to their associated category for
+            // the sake of simplifity. 
+            // As an example "hello" becomes "greet" which is then used as an 
+            // action key in the callbacks.
             const action = token.toString();
             const rootActionSearch = new RegExp(action +':([a-z]+),');
             const rootAction = intentIndex.match(rootActionSearch);
+
             if (rootAction && rootAction[1]) {
                 model.action = rootAction[1];
             }

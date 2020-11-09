@@ -2,8 +2,8 @@ import { allIntents } from '../messages/intents'
 import { objects } from '../messages/controller'
 
 export default {
-    object: objects,
-    action: new RegExp('(?:'+ allIntents.join('|') +')'),
+    object: objects, // A single dimensional array of root-level keys defined in the messages controller
+    action: new RegExp('(?:'+ allIntents.join('|') +')'), // All of the keywords defined in the intents file
     text: {
         match: /me to (?:.+?(?= in|$))/, 
         value: (s: string) => { 
