@@ -27,6 +27,15 @@ type UnknownMessage = {
   kind: "unknown";
 };
 
+export interface MessageInterface {
+  action: string;
+  object?: string;
+  text?: string;
+  quantity?: number;
+  modifier?: string;
+  unit?: string;
+}
+
 export type Message = HelpMessage
              | AddReminderMessage
              | ListRemindersMessage
