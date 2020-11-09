@@ -1,12 +1,7 @@
 import { MessageInterface, Reminder, State } from './types'
 import { executeMessage, clearAllReminders } from './controller'
-import { Events } from '../events'
 // TODO: This isn't an explicit thing. VSCode isn't recognizing these as globals...
 import { jest, describe, expect, test, beforeEach } from '@jest/globals'
-import { mocked } from 'ts-jest/utils'
-
-jest.mock('../events');
-const mockedEvents = mocked(Events, true)
 
 describe.only('Messages', function(){
 
@@ -15,8 +10,6 @@ describe.only('Messages', function(){
         let reminder: Reminder, state: State, message: MessageInterface;
 
         beforeEach(function(){
-
-            mockedEvents.emit.mockClear();
 
             reminder = {
                 id: 1,
@@ -42,14 +35,7 @@ describe.only('Messages', function(){
         test('help -> returns a message', () => {
 
             message.action = 'help';
-            executeMessage(state, message)
-
-            const mock = mockedEvents.emit.mock.calls[0];
-            const name = mock[0];
-            const result = mock[1];
-
-            expect(mockedEvents.emit).toHaveBeenCalled();
-            expect(name).toBe('send-message')
+            const result = executeMessage(state, message)
             expect(result).toContain("I am a reminder bot");
 
         });
@@ -61,13 +47,8 @@ describe.only('Messages', function(){
             message.quantity = 60;
             message.unit = 'seconds';
 
-            executeMessage(state, message)
+            const result = executeMessage(state, message)
 
-            const mock = mockedEvents.emit.mock.calls[0];
-            const name = mock[0];
-            const result = mock[1];
-
-            expect(name).toBe('send-message')
             expect(result).toContain("Ok, I will remind you to");
             expect(result).toContain("you ");
             expect(result).toContain("your");
@@ -80,14 +61,7 @@ describe.only('Messages', function(){
             test('returns a message for 0 reminders', () => {
 
                 message.action = 'list';
-
-                executeMessage(state, message)
-
-                const mock = mockedEvents.emit.mock.calls[0];
-                const name = mock[0];
-                const result = mock[1];
-
-                expect(name).toBe('send-message')
+                const result = executeMessage(state, message)
                 expect(result).toContain("You have no reminders.");
 
             });
@@ -96,13 +70,8 @@ describe.only('Messages', function(){
                 message.action = 'list';
                 state.reminders.push(reminder);
 
-                executeMessage(state, message)
-
-                const mock = mockedEvents.emit.mock.calls[0];
-                const name = mock[0];
-                const result = mock[1];
-
-                expect(name).toBe('send-message')                
+                const result = executeMessage(state, message)
+               
                 expect(result).toContain("<table");
                 expect(result).toContain(reminder.text);
 
@@ -116,13 +85,8 @@ describe.only('Messages', function(){
             message.modifier = 'all';
             state.reminders.push(reminder);
 
-            executeMessage(state, message)
+            const result = executeMessage(state, message)
 
-            const mock = mockedEvents.emit.mock.calls[0];
-            const name = mock[0];
-            const result = mock[1];
-
-            expect(name).toBe('send-message')
             expect(result).toBe("Ok, I have cleared all of your reminders.");
             expect(state.reminders.length).toBe(0);       
 
@@ -135,13 +99,8 @@ describe.only('Messages', function(){
                 message.modifier = 2;
                 state.reminders.push(reminder);
 
-                executeMessage(state, message)
+                const result = executeMessage(state, message)
 
-                const mock = mockedEvents.emit.mock.calls[0];
-                const name = mock[0];
-                const result = mock[1];
-
-                expect(name).toBe('send-message')                
                 expect(result).toContain("There is no reminder with id");
                 expect(state.reminders.length).toBe(1);       
 
@@ -153,13 +112,8 @@ describe.only('Messages', function(){
                 message.modifier = 1;
                 state.reminders.push(reminder);
 
-                executeMessage(state, message)
+                const result = executeMessage(state, message)
 
-                const mock = mockedEvents.emit.mock.calls[0];
-                const name = mock[0];
-                const result = mock[1];
-
-                expect(name).toBe('send-message')
                 expect(result).toContain("Ok, I will not remind you to");
                 expect(result).toContain(reminder.text);
                 expect(state.reminders.length).toBe(0);       
@@ -171,14 +125,7 @@ describe.only('Messages', function(){
         test('unknown -> returns a general friendly error', () => {
 
             message.action = 'unknown';
- 
-            executeMessage(state, message)
-
-            const mock = mockedEvents.emit.mock.calls[0];
-            const name = mock[0];
-            const result = mock[1];
-
-            expect(name).toBe('send-message')
+            const result = executeMessage(state, message)
             expect(result).toBe("Sorry! I don't understand what you mean.");
 
         });

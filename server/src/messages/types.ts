@@ -21,7 +21,7 @@ interface ActionMapInterface {
     [key: string]: ActionInterface; 
 }
 interface ActionInterface { 
-    (state: State, message: MessageInterface): void;
+    (state: State, message: MessageInterface): Error | string;
 }
 
 // Types 

@@ -14,7 +14,8 @@ export default (ws: WebSocket) => {
 
   ws.on('message', (rawMessage) => {
     const message = Parser(rawMessage.toString());
-    executeMessage(state, message);
+    const response = executeMessage(state, message);
+    Events.emit('send-message', response);
   });
 
   ws.on('close', () => {

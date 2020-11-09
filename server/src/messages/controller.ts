@@ -1,5 +1,4 @@
 import { ExecutorInterface, MessageInterface, State } from "./types";
-import { Events } from '../events'
 
 // A structure to define and scale out different callbacked based on an
 // Object -> Action relationship. 
@@ -11,7 +10,7 @@ import { Events } from '../events'
 const callbacks: ExecutorInterface = {
     'generic': {
         help: function(state: State, message: MessageInterface) {
-            Events.emit('send-message', 
+            return (
                 `I am a reminder bot, here to help you get organized. Here are some of the things you can ask me to do:
                 <ul>
                 <li>Add reminders, e.g. <tt>remind me to make dinner in 5 minutes</tt>.</li>
@@ -22,13 +21,13 @@ const callbacks: ExecutorInterface = {
             );
         },
         greet: function(state: State, message: MessageInterface) {
-            Events.emit('send-message', 'Hello there!');
+            return 'Hello there!';
         },
         thank: function(state: State, message: MessageInterface) {
-            Events.emit('send-message', 'You\'re welcome');
+            return 'You\'re welcome';
         },
         unknown: function(state: State, message: MessageInterface) {
-            Events.emit('send-message', 'Sorry! I don\'t understand what you mean.');
+            return 'Sorry! I don\'t understand what you mean.';
         }
     },
     'reminder': {
@@ -43,7 +42,6 @@ const callbacks: ExecutorInterface = {
                 .replace(/\bmy\b/g, 'your')
                 .replace(/\bme\b/g, 'you');
             const id = state.nextId++;
-
             let unit = message.unit;
             let multipier = 1;
 
@@ -59,8 +57,8 @@ const callbacks: ExecutorInterface = {
             date.setSeconds(date.getSeconds() + seconds);
 
             const timeout = setTimeout(() => {
-                Events.emit('send-message', `It is time to ${text}!`)
                 state.reminders = state.reminders.filter((r) => r.id !== id);
+                return `It is time to ${text}!`;
             }, seconds * 1000);
 
             state.reminders.push({ id, date, text, timeout });
@@ -69,9 +67,7 @@ const callbacks: ExecutorInterface = {
                 unit += 's';
             }
 
-            Events.emit('send-message', `Ok, I will remind you to ${text} in ${quantity} ${unit}.`);
-
-            return;
+            return `Ok, I will remind you to ${text} in ${quantity} ${unit}.`;
 
         }, 
         delete: function(state: State, message: MessageInterface) {
@@ -81,41 +77,33 @@ const callbacks: ExecutorInterface = {
             }
 
             if (message.modifier === 'all') {
-
                 clearAllReminders(state);
-                Events.emit('send-message', "Ok, I have cleared all of your reminders.");
-                return;
+                return "Ok, I have cleared all of your reminders.";
+            } 
 
-            } else {
+            const messageId = +message.modifier;
+            const reminder = state.reminders.find((r) => r.id === messageId);
 
-                const messageId = +message.modifier;
-                const reminder = state.reminders.find((r) => r.id === messageId);
-
-                if (!reminder) {
-                    Events.emit('send-message', `There is no reminder with id ${messageId}.`);
-                    return;
-                }
-
-                clearTimeout(reminder.timeout);
-                state.reminders = state.reminders.filter((r) => r !== reminder);
-
-                Events.emit('send-message', `Ok, I will not remind you to ${reminder.text}.`);
-                return;
-                
+            if (!reminder) {
+                return `There is no reminder with id ${messageId}.`;
             }
+
+            clearTimeout(reminder.timeout);
+            state.reminders = state.reminders.filter((r) => r !== reminder);
+
+            return `Ok, I will not remind you to ${reminder.text}.`;
 
         }, 
         list: function(state: State, message: MessageInterface) {
 
             if (state.reminders.length === 0) {
-                Events.emit('send-message', "You have no reminders.");
-                return;
+                return "You have no reminders.";
             }
 
             const now = new Date().getTime();
             
-            Events.emit('send-message', `
-                <table border="1">
+            return (
+                `<table border="1">
                     <thead>
                     <tr>
                         <th>id</th>
@@ -135,7 +123,6 @@ const callbacks: ExecutorInterface = {
                     </tbody>
                 </table>`
             );
-            return; 
 
         },
     },
@@ -149,22 +136,15 @@ const callbacks: ExecutorInterface = {
             const modifier = +message.modifier;
             state.tacos += modifier
 
-            Events.emit('send-message', `Ok! We've added ${modifier} taco(s)`);
-            return;
+            return `Ok! We've added ${modifier} taco(s)`;
 
         },
         list: function(state: State, message: MessageInterface) {
-
-            Events.emit('send-message', `You have ${state.tacos} incoming taco(s)! Woah mama!`);
-            return;
-
+            return `You have ${state.tacos} incoming taco(s)! Woah mama!`;
         },
         delete: function(state: State, message: MessageInterface) {
-
             state.tacos = 0
-            Events.emit('send-message', `Ok! No more tacos, then!`);
-            return;
-
+            return `Ok! No more tacos, then!`;
         }
     }
 }
