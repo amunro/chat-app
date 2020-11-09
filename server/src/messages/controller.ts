@@ -1,7 +1,14 @@
-import { GenericInterface, MessageInterface, State } from "./types";
+import { ExecutorInterface, MessageInterface, State } from "./types";
 import { Events } from '../events'
 
-const callbacks: GenericInterface = {
+// A structure to define and scale out different callbacked based on an
+// Object -> Action relationship. 
+// Objects (the root keys of these structure - generic, reminder, tacos, ...) are 
+//     sourced sent to the lexer. 
+// Actions (the key -> function) pairing are referenced when the lexer has come  
+//     across key words to signal such intent.
+
+const callbacks: ExecutorInterface = {
     'generic': {
         help: function(state: State, message: MessageInterface) {
             Events.emit('send-message', 

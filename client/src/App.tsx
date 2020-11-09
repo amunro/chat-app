@@ -36,7 +36,8 @@ export default () => {
     };
 
     ws.onmessage = (event) => {
-      setMessages((messages) => [...messages, { speaker: 'bot', text: `${event.data}` }]);
+      const message = JSON.parse(event.data).message;
+      setMessages((messages) => [...messages, { speaker: 'bot', text: `${message}` }]);
     };
 
     return () => {

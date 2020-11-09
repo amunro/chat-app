@@ -14,6 +14,16 @@ export interface MessageInterface extends GenericInterface {
   unit?: string;
 }
 
+export interface ExecutorInterface { 
+    [key: string]: ActionMapInterface; 
+}
+interface ActionMapInterface { 
+    [key: string]: ActionInterface; 
+}
+interface ActionInterface { 
+    (state: State, message: MessageInterface): void;
+}
+
 // Types 
 
 export type Reminder = {

@@ -68,6 +68,7 @@ typings/
 
 # Build directory
 build/
+*/**/dist/
 
 # OS Specifics
 .DS_Store
