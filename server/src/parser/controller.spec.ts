@@ -9,6 +9,7 @@ describe('Parser', function(){
         describe.each([
 
                 ['help', ['action']],
+                ['omg!', ['action']],
                 ['remind me to eat in 60 seconds', ['action','text', 'quantity', 'unit']],
                 ['remind me to eat in a minute', ['action','text', 'quantity', 'unit']],
                 ['remind me to eat in an hour', ['action','text', 'quantity', 'unit']],

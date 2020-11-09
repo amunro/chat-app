@@ -14,8 +14,13 @@ export default (ws: WebSocket) => {
 
   ws.on('message', (rawMessage) => {
     const message = Parser(rawMessage.toString());
-    const response = executeMessage(state, message);
-    Events.emit('send-message', response);
+    let response;
+    try {
+      response = executeMessage(state, message);
+      Events.emit('send-message', response);
+    } catch (e) {
+      Events.emit('send-message', 'Sorry, I didn\'t quite get that.  Type <tt>help</tt> to see a list of commands.');
+    }
   });
 
   ws.on('close', () => {

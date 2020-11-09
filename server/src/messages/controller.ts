@@ -34,7 +34,7 @@ const callbacks: ExecutorInterface = {
         add: function(state: State, message: MessageInterface) {
 
             if (!message.quantity || !message.text || !message.unit) {
-                return new Error('Missing one or more required fields');
+                throw new Error('Missing one or more required fields');
             }
 
             const quantity = message.quantity;
@@ -73,7 +73,7 @@ const callbacks: ExecutorInterface = {
         delete: function(state: State, message: MessageInterface) {
 
             if (!message.modifier) {
-                return new Error('Missing one or more required fields');
+                throw new Error('Missing one or more required fields');
             }
 
             if (message.modifier === 'all') {
@@ -130,7 +130,7 @@ const callbacks: ExecutorInterface = {
         add: function(state: State, message: MessageInterface) {
 
             if (!message.modifier) {
-                return new Error('Missing one or more required fields');
+                throw new Error('Missing one or more required fields');
             }
 
             const modifier = +message.modifier;

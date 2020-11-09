@@ -23,5 +23,6 @@ export default {
     NL: { 
         match: /\n/, 
         lineBreaks: true 
-    }
+    },
+    CHAR: /.+/
 }

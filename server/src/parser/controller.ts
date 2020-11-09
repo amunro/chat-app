@@ -17,7 +17,7 @@ export default function( input: string ): MessageInterface {
     lexer.reset(input)
 
     while (token = lexer.next()) {
-        if (token.type.match(/word|WS|NL/)){
+        if (token.type.match(/word|WS|CHAR|NL/)){
             continue;
         }
         if (token.type === 'action') {
