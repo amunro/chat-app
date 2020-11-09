@@ -1,36 +1,22 @@
-import { Message, Reminder, State } from './types'
-import { parseMessage, executeMessage, clearAllReminders } from './controller.old'
-
+import { MessageInterface, Reminder, State } from './types'
+import { executeMessage, clearAllReminders } from './controller'
+import { Events } from '../events'
 // TODO: This isn't an explicit thing. VSCode isn't recognizing these as globals...
 import { jest, describe, expect, test, beforeEach } from '@jest/globals'
+import { mocked } from 'ts-jest/utils'
 
-describe('Messages', function(){
+jest.mock('../events');
+const mockedEvents = mocked(Events, true)
 
-    describe('parseMessage', function(){
+describe.only('Messages', function(){
 
-        describe.each([
-
-            ['help', 'help'],
-            ['remind me to eat in 60 seconds', 'add-reminder'],
-            ['in 60 seconds tell me to eat', 'add-reminder'],
-            ['list my reminders', 'list-reminders'],
-            ['delete all my reminders', 'clear-all-reminders'],
-            ['delete reminder 2', 'clear-reminder'],
-            ['tacoz 4 dayz', 'unknown']
-
-        ])('%s', function(message, expected){
-            test(`returns a message kind of ${expected}`, () => {
-                const result = parseMessage(message.toString());
-                expect(result.kind).toBe(expected);
-            });
-        });
-
-    })
     describe('executeMessage', function(){
 
-        let reminder: Reminder, state: State;
+        let reminder: Reminder, state: State, message: MessageInterface;
 
         beforeEach(function(){
+
+            mockedEvents.emit.mockClear();
 
             reminder = {
                 id: 1,
@@ -44,28 +30,44 @@ describe('Messages', function(){
                 nextId: 1,
                 tacos: 0
             }
+
+            message = {
+                source: 'remind me to blah',
+                action: 'unknown',
+                object: 'reminder',
+            }
             
-        })
+        });
 
         test('help -> returns a message', () => {
 
-            const message: Message = {
-                kind: "help"
-            }
+            message.action = 'help';
+            executeMessage(state, message)
 
-            let result = executeMessage(state, message)
+            const mock = mockedEvents.emit.mock.calls[0];
+            const name = mock[0];
+            const result = mock[1];
+
+            expect(mockedEvents.emit).toHaveBeenCalled();
+            expect(name).toBe('send-message')
             expect(result).toContain("I am a reminder bot");
 
         });
 
         test('add-reminder -> returns a message', () => {
 
-            const message: Message = {
-                kind: "add-reminder",
-                text: "my me",
-                seconds: 120
-            }
-            let result = executeMessage(state, message)
+            message.action = 'add';
+            message.text = 'me my';
+            message.quantity = 60;
+            message.unit = 'seconds';
+
+            executeMessage(state, message)
+
+            const mock = mockedEvents.emit.mock.calls[0];
+            const name = mock[0];
+            const result = mock[1];
+
+            expect(name).toBe('send-message')
             expect(result).toContain("Ok, I will remind you to");
             expect(result).toContain("you ");
             expect(result).toContain("your");
@@ -77,20 +79,30 @@ describe('Messages', function(){
 
             test('returns a message for 0 reminders', () => {
 
-                const message: Message = {
-                    kind: "list-reminders",
-                }
-                let result = executeMessage(state, message)
+                message.action = 'list';
+
+                executeMessage(state, message)
+
+                const mock = mockedEvents.emit.mock.calls[0];
+                const name = mock[0];
+                const result = mock[1];
+
+                expect(name).toBe('send-message')
                 expect(result).toContain("You have no reminders.");
 
             });
             test('returns a message for >0 reminders', () => {
 
-                const message: Message = {
-                    kind: "list-reminders",
-                }
+                message.action = 'list';
                 state.reminders.push(reminder);
-                let result = executeMessage(state, message)
+
+                executeMessage(state, message)
+
+                const mock = mockedEvents.emit.mock.calls[0];
+                const name = mock[0];
+                const result = mock[1];
+
+                expect(name).toBe('send-message')                
                 expect(result).toContain("<table");
                 expect(result).toContain(reminder.text);
 
@@ -100,23 +112,17 @@ describe('Messages', function(){
 
         test('clear-all-reminders -> returns a message AND calls `clearAllReminders`', () => {
 
-            const message: Message = {
-                kind: "clear-all-reminders",
-            }
+            message.action = 'delete';
+            message.modifier = 'all';
             state.reminders.push(reminder);
-            let result = executeMessage(state, message)
-            expect(result).toBe("Ok, I have cleared all of your reminders.");
-            expect(state.reminders.length).toBe(0);       
 
-        });
+            executeMessage(state, message)
 
-        test('clear-reminder -> returns a message AND calls `clearAllReminders`', () => {
+            const mock = mockedEvents.emit.mock.calls[0];
+            const name = mock[0];
+            const result = mock[1];
 
-            const message: Message = {
-                kind: "clear-all-reminders",
-            }
-            state.reminders.push(reminder);
-            let result = executeMessage(state, message)
+            expect(name).toBe('send-message')
             expect(result).toBe("Ok, I have cleared all of your reminders.");
             expect(state.reminders.length).toBe(0);       
 
@@ -125,12 +131,17 @@ describe('Messages', function(){
         describe('clear-reminder', function(){
             test('returns a message if none is found', () => {
 
-                const message: Message = {
-                    kind: "clear-reminder",
-                    id: 2
-                }
+                message.action = 'delete';
+                message.modifier = 2;
                 state.reminders.push(reminder);
-                let result = executeMessage(state, message)
+
+                executeMessage(state, message)
+
+                const mock = mockedEvents.emit.mock.calls[0];
+                const name = mock[0];
+                const result = mock[1];
+
+                expect(name).toBe('send-message')                
                 expect(result).toContain("There is no reminder with id");
                 expect(state.reminders.length).toBe(1);       
 
@@ -138,12 +149,17 @@ describe('Messages', function(){
 
             test('returns a message and clears if a reminder is found', () => {
 
-                const message: Message = {
-                    kind: "clear-reminder",
-                    id: 1
-                }
+                message.action = 'delete';
+                message.modifier = 1;
                 state.reminders.push(reminder);
-                let result = executeMessage(state, message)
+
+                executeMessage(state, message)
+
+                const mock = mockedEvents.emit.mock.calls[0];
+                const name = mock[0];
+                const result = mock[1];
+
+                expect(name).toBe('send-message')
                 expect(result).toContain("Ok, I will not remind you to");
                 expect(result).toContain(reminder.text);
                 expect(state.reminders.length).toBe(0);       
@@ -154,11 +170,16 @@ describe('Messages', function(){
 
         test('unknown -> returns a general friendly error', () => {
 
-            const message: Message = {
-                kind: "unknown"
-            }
-            let result = executeMessage(state, message)
-            expect(result).toBe("I'm sorry, I don't understand what you mean.");
+            message.action = 'unknown';
+ 
+            executeMessage(state, message)
+
+            const mock = mockedEvents.emit.mock.calls[0];
+            const name = mock[0];
+            const result = mock[1];
+
+            expect(name).toBe('send-message')
+            expect(result).toBe("Sorry! I don't understand what you mean.");
 
         });
 

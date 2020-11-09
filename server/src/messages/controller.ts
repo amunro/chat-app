@@ -64,7 +64,7 @@ const callbacks: GenericInterface = {
 
             Events.emit('send-message', `Ok, I will remind you to ${text} in ${quantity} ${unit}.`);
 
-            return true;
+            return;
 
         }, 
         delete: function(state: State, message: MessageInterface) {
@@ -77,7 +77,7 @@ const callbacks: GenericInterface = {
 
                 clearAllReminders(state);
                 Events.emit('send-message', "Ok, I have cleared all of your reminders.");
-                return true;
+                return;
 
             } else {
 
@@ -85,15 +85,15 @@ const callbacks: GenericInterface = {
                 const reminder = state.reminders.find((r) => r.id === messageId);
 
                 if (!reminder) {
-                    return `There is no reminder with id ${messageId}.`;
+                    Events.emit('send-message', `There is no reminder with id ${messageId}.`);
+                    return;
                 }
 
                 clearTimeout(reminder.timeout);
                 state.reminders = state.reminders.filter((r) => r !== reminder);
 
                 Events.emit('send-message', `Ok, I will not remind you to ${reminder.text}.`);
-
-                return true;
+                return;
                 
             }
 
@@ -102,7 +102,7 @@ const callbacks: GenericInterface = {
 
             if (state.reminders.length === 0) {
                 Events.emit('send-message', "You have no reminders.");
-                return true;
+                return;
             }
 
             const now = new Date().getTime();
@@ -128,7 +128,7 @@ const callbacks: GenericInterface = {
                     </tbody>
                 </table>`
             );
-            return true; 
+            return; 
 
         },
     },
@@ -143,20 +143,20 @@ const callbacks: GenericInterface = {
             state.tacos += modifier
 
             Events.emit('send-message', `Ok! We've added ${modifier} taco(s)`);
-            return true;
+            return;
 
         },
         list: function(state: State, message: MessageInterface) {
 
             Events.emit('send-message', `You have ${state.tacos} incoming taco(s)! Woah mama!`);
-            return true;
+            return;
 
         },
         delete: function(state: State, message: MessageInterface) {
 
             state.tacos = 0
             Events.emit('send-message', `Ok! No more tacos, then!`);
-            return true;
+            return;
 
         }
     }
