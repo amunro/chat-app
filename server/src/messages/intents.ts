@@ -1,10 +1,11 @@
-interface IntentInterface {
-  [propName: string]: any;
-}
+import { GenericInterface } from "./types";
 
-const intents: IntentInterface = {
+const intents: GenericInterface = {
     "greet": {
         keywords: [ "hello", "hi", "hey" ]
+    },
+    "thank": {
+        keywords: [ "thanks", "thank", "arigato" ]
     },
     "help": {
         keywords: [ "help", "omg" ]
@@ -30,11 +31,12 @@ const intents: IntentInterface = {
 }
 
 export let intentIndex = '';
+
 const intentCategories = (
     Object
         .keys(intents)
         .map(function(key) {
-            const intentKey = key as keyof IntentInterface
+            const intentKey = key as keyof GenericInterface
             const intentSet = intents[intentKey];
             intentIndex += intentSet.keywords.join(':'+ key +',') +':'+ key +','
             return intentSet.keywords;

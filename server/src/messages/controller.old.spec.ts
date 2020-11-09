@@ -1,5 +1,5 @@
 import { Message, Reminder, State } from './types'
-import { parseMessage, executeMessage, clearAllReminders } from './controller'
+import { parseMessage, executeMessage, clearAllReminders } from './controller.old'
 
 // TODO: This isn't an explicit thing. VSCode isn't recognizing these as globals...
 import { jest, describe, expect, test, beforeEach } from '@jest/globals'
@@ -42,6 +42,7 @@ describe('Messages', function(){
             state = {
                 reminders: [],
                 nextId: 1,
+                tacos: 0
             }
             
         })
@@ -179,6 +180,7 @@ describe('Messages', function(){
             state = {
                 reminders: [reminder],
                 nextId: 1,
+                tacos: 0
             }
             
         });

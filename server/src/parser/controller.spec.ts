@@ -7,6 +7,7 @@ import { MessageInterface } from '../messages/types';
 describe('Parser', function(){
     describe('tokenizeInput', function(){
         describe.each([
+
                 ['help', ['action']],
                 ['remind me to eat in 60 seconds', ['action','text', 'quantity', 'unit']],
                 ['remind me to eat in a minute', ['action','text', 'quantity', 'unit']],

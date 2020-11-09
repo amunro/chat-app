@@ -1,140 +1,176 @@
-import { Events } from './../events'
-import { Message, State } from './types'
-import { createParser } from './../parser';
+import { GenericInterface, MessageInterface, State } from "./types";
+import { Events } from '../events'
 
-export const parseMessage = createParser<Message>({
-  intents: [
-    {
-      regexps: [
-        /^help\.?$/i,
-      ],
-      func: () => ({ kind: 'help' }),
-    },
-    {
-      regexps: [
-        /^(?:remind|tell) me to (?<text>.*) in (?<quantity>\d+|a|an) (?<unit>(?:second|minute|hour)s?)\.?$/i,
-        /^in (?<quantity>\d+|a|an) (?<unit>(?:second|minute|hour)s?),? (?:remind|tell) me to (?<text>.*)\.?$/i,
-      ],
-      func: ({ text, quantity, unit }) => {
-        let seconds = quantity.startsWith("a") ? 1 : Number(quantity);
-
-        if (unit.toLowerCase().startsWith("minute")) {
-          seconds *= 60;
-        } else if (unit.toLowerCase().startsWith("hour")) {
-          seconds *= 3600;
+const callbacks: GenericInterface = {
+    'generic': {
+        help: function(state: State, message: MessageInterface) {
+            Events.emit('send-message', 
+                `I am a reminder bot, here to help you get organized. Here are some of the things you can ask me to do:
+                <ul>
+                <li>Add reminders, e.g. <tt>remind me to make dinner in 5 minutes</tt>.</li>
+                <li>List reminders, e.g. <tt>show all reminders</tt>.
+                <li>Clear reminders, e.g. <tt>clear all reminders</tt> or <tt>clear reminder 3</tt>.
+                </ul>
+                At the moment I am not very sophisticated, but maybe you can help make me better!`
+            );
+        },
+        greet: function(state: State, message: MessageInterface) {
+            Events.emit('send-message', 'Hello there!');
+        },
+        thank: function(state: State, message: MessageInterface) {
+            Events.emit('send-message', 'You\'re welcome');
+        },
+        unknown: function(state: State, message: MessageInterface) {
+            Events.emit('send-message', 'Sorry! I don\'t understand what you mean.');
         }
-
-        return { kind: "add-reminder", seconds, text };
-      },
     },
-    {
-      regexps: [
-        /^(?:list|show|tell) (?:(?:me|all|of|my) )*reminders\.?$/i,
-      ],
-      func: () => ({ kind: "list-reminders" }),
-    },
-    {
-      regexps: [
-        /^(?:clear|delete|remove|forget) (?:(?:all|of|my) )*reminders\.?$/i,
-      ],
-      func: () => ({ kind: "clear-all-reminders" }),
-    },
-    {
-      regexps: [
-        /^(?:clear|delete|remove|forget) (?:reminder )?(?<id>\d+)\.?$/i,
-      ],
-      func: ({ id }) => ({ kind: "clear-reminder", id: Number(id) }),
-    },
-  ],
-  fallback: { kind: "unknown" },
-});
+    'reminder': {
+        add: function(state: State, message: MessageInterface) {
 
-export function executeMessage(state: State, message: Message) {
-  switch (message.kind) {
-    case "help": {
-      return `I am a reminder bot, here to help you get organized. Here are some of the things you can ask me to do:
+            if (!message.quantity || !message.text || !message.unit) {
+                return new Error('Missing one or more required fields');
+            }
 
-<ul>
-  <li>Add reminders, e.g. <tt>remind me to make dinner in 5 minutes</tt>.</li>
-  <li>List reminders, e.g. <tt>show all reminders</tt>.
-  <li>Clear reminders, e.g. <tt>clear all reminders</tt> or <tt>clear reminder 3</tt>.
-</ul>
+            const quantity = message.quantity;
+            const text = message.text
+                .replace(/\bmy\b/g, 'your')
+                .replace(/\bme\b/g, 'you');
+            const id = state.nextId++;
 
-At the moment I am not very sophisticated, but maybe you can help make me better!`;
+            let unit = message.unit;
+            let multipier = 1;
+
+            if (unit === 'minute') {
+                multipier = 60;
+            } else if (unit === 'hour') {
+                multipier = 3600;
+            }
+
+            const seconds = quantity * multipier; 
+
+            const date = new Date();
+            date.setSeconds(date.getSeconds() + seconds);
+
+            const timeout = setTimeout(() => {
+                Events.emit('send-message', `It is time to ${text}!`)
+                state.reminders = state.reminders.filter((r) => r.id !== id);
+            }, seconds * 1000);
+
+            state.reminders.push({ id, date, text, timeout });
+
+            if (quantity > 1) {
+                unit += 's';
+            }
+
+            Events.emit('send-message', `Ok, I will remind you to ${text} in ${quantity} ${unit}.`);
+
+            return true;
+
+        }, 
+        delete: function(state: State, message: MessageInterface) {
+
+            if (!message.modifier) {
+                return new Error('Missing one or more required fields');
+            }
+
+            if (message.modifier === 'all') {
+
+                clearAllReminders(state);
+                Events.emit('send-message', "Ok, I have cleared all of your reminders.");
+                return true;
+
+            } else {
+
+                const messageId = +message.modifier;
+                const reminder = state.reminders.find((r) => r.id === messageId);
+
+                if (!reminder) {
+                    return `There is no reminder with id ${messageId}.`;
+                }
+
+                clearTimeout(reminder.timeout);
+                state.reminders = state.reminders.filter((r) => r !== reminder);
+
+                Events.emit('send-message', `Ok, I will not remind you to ${reminder.text}.`);
+
+                return true;
+                
+            }
+
+        }, 
+        list: function(state: State, message: MessageInterface) {
+
+            if (state.reminders.length === 0) {
+                Events.emit('send-message', "You have no reminders.");
+                return true;
+            }
+
+            const now = new Date().getTime();
+            
+            Events.emit('send-message', `
+                <table border="1">
+                    <thead>
+                    <tr>
+                        <th>id</th>
+                        <th>seconds remaining</th>
+                        <th>text</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    ${state.reminders
+                        .map(({ id, date, text }) => `
+                        <tr>
+                            <td>${id}</td>
+                            <td>${Math.round((date.getTime() - now) / 1000)}</td>
+                            <td>${text}</td>
+                        </tr>`)
+                        .join("")}
+                    </tbody>
+                </table>`
+            );
+            return true; 
+
+        },
+    },
+    'taco': {
+        add: function(state: State, message: MessageInterface) {
+
+            if (!message.modifier) {
+                return new Error('Missing one or more required fields');
+            }
+
+            const modifier = +message.modifier;
+            state.tacos += modifier
+
+            Events.emit('send-message', `Ok! We've added ${modifier} taco(s)`);
+            return true;
+
+        },
+        list: function(state: State, message: MessageInterface) {
+
+            Events.emit('send-message', `You have ${state.tacos} incoming taco(s)! Woah mama!`);
+            return true;
+
+        },
+        delete: function(state: State, message: MessageInterface) {
+
+            state.tacos = 0
+            Events.emit('send-message', `Ok! No more tacos, then!`);
+            return true;
+
+        }
+    }
+}
+
+export function executeMessage(state: State, message: MessageInterface) {
+
+    if (message.object && callbacks[message.object] && callbacks[message.object][message.action]) {
+        return callbacks[message.object][message.action](state, message)
+    } else if (callbacks.generic[message.action]) {
+        return callbacks.generic[message.action](state, message);
     }
 
-    case "add-reminder": {
-      const seconds = message.seconds;
-      const text = message.text
-        .replace(/\bmy\b/g, 'your')
-        .replace(/\bme\b/g, 'you');
-
-      const id = state.nextId++;
-
-      const date = new Date();
-      date.setSeconds(date.getSeconds() + seconds);
-
-      const timeout = setTimeout(() => {
-        Events.emit('send-message', `It is time to ${text}!`)
-        state.reminders = state.reminders.filter((r) => r.id !== id);
-      }, seconds * 1000);
-
-      state.reminders.push({ id, date, text, timeout });
-
-      const unit = seconds === 1 ? 'second' : 'seconds';
-      return `Ok, I will remind you to ${text} in ${seconds} ${unit}.`;
-    };
-
-  case "list-reminders": {
-    if (state.reminders.length === 0) {
-      return "You have no reminders.";
-    }
-
-    const now = new Date().getTime();
-
-    return `
-      <table border="1">
-        <thead>
-          <tr>
-            <th>id</th>
-            <th>seconds remaining</th>
-            <th>text</th>
-          </tr>
-        </thead>
-        <tbody>
-          ${state.reminders
-            .map(({ id, date, text }) => `
-              <tr>
-                <td>${id}</td>
-                <td>${Math.round((date.getTime() - now) / 1000)}</td>
-                <td>${text}</td>
-              </tr>`)
-            .join("")}
-        </tbody>
-      </table>`;
-  }
-
-  case "clear-all-reminders": {
-    clearAllReminders(state);
-    return "Ok, I have cleared all of your reminders.";
-  }
-
-  case "clear-reminder": {
-    const reminder = state.reminders.find((r) => r.id === message.id);
-
-    if (!reminder) {
-      return `There is no reminder with id ${message.id}.`;
-    }
-
-    clearTimeout(reminder.timeout);
-    state.reminders = state.reminders.filter((r) => r !== reminder);
-
-    return `Ok, I will not remind you to ${reminder.text}.`;
-  }
-
-  case "unknown":
-    return "I'm sorry, I don't understand what you mean.";
-  }
+    return callbacks.generic.unknown(state, message);
 }
 
 export function clearAllReminders(state: State) {
@@ -144,3 +180,5 @@ export function clearAllReminders(state: State) {
 
   state.reminders = [];
 }
+
+export const objects = Object.keys(callbacks);

@@ -1,5 +1,5 @@
 import { allIntents } from '../messages/intents'
-import { objects } from '../messages/objects'
+import { objects } from '../messages/controller'
 
 export default {
     object: objects,

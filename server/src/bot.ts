@@ -2,18 +2,17 @@ import WebSocket from 'ws';
 
 import { Events } from './events'
 import { State } from './messages/types'
-import { clearAllReminders } from './messages/controller'
+import { executeMessage, clearAllReminders } from './messages/controller'
 import Parser from './parser/controller'
 
 // Websocket wrapper
 export default (ws: WebSocket) => {
-  const state: State = { nextId: 1, reminders: [] };
-
+  const state: State = { nextId: 1, reminders: [], tacos: 0 };
+  Events.setWS(ws);
+  
   ws.on('message', (rawMessage) => {
     const message = Parser(rawMessage.toString());
-    console.log(message);
-    //    const reply = executeMessage(state, message);
-    //ws.send(reply);
+    executeMessage(state, message);
   });
 
   ws.on('close', () => {
@@ -22,7 +21,8 @@ export default (ws: WebSocket) => {
   
   ws.send('Greetings, friend! Type <tt>help</tt> to get started.');
 
-  Events.on('send-message', (message: String) => {
-    ws.send(message)
-  });
 };
+
+Events.on('send-message', (message: String) => {
+  Events.ws.send(message)
+});

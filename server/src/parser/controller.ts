@@ -3,14 +3,15 @@ import { MessageInterface } from './../messages/types'
 import MooConfig from './moo.config'
 
 const moo = require('moo');
-
 const lexer = moo.compile(MooConfig);
 
 export default function( input: string ): MessageInterface {
 
     let token;
     const model: MessageInterface = {
-        action: 'unknown'
+        source: input,
+        action: 'unknown',
+        object: 'reminder'
     };
 
     lexer.reset(input)
@@ -20,7 +21,6 @@ export default function( input: string ): MessageInterface {
             continue;
         }
         if (token.type === 'action') {
-
             const action = token.toString();
             const rootActionSearch = new RegExp(action +':([a-z]+),');
             const rootAction = intentIndex.match(rootActionSearch);
