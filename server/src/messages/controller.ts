@@ -1,4 +1,5 @@
 import { ExecutorInterface, MessageInterface, State } from "./types";
+import { Events } from './../events'
 
 // A structure to define and scale out different callbacked based on an
 // Object -> Action relationship. 
@@ -6,7 +7,6 @@ import { ExecutorInterface, MessageInterface, State } from "./types";
 //     sourced sent to the lexer. 
 // Actions (the key -> function) pairing are referenced when the lexer has come  
 //     across key words to signal such intent.
-
 const callbacks: ExecutorInterface = {
     'generic': {
         help: function(state: State, message: MessageInterface) {
@@ -58,7 +58,7 @@ const callbacks: ExecutorInterface = {
 
             const timeout = setTimeout(() => {
                 state.reminders = state.reminders.filter((r) => r.id !== id);
-                return `It is time to ${text}!`;
+                Events.emit('send-message', `It is time to ${text}!`);
             }, seconds * 1000);
 
             state.reminders.push({ id, date, text, timeout });

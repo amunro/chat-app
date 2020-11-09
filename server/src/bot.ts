@@ -1,5 +1,4 @@
 import WebSocket from 'ws';
-
 import { Events } from './events'
 import { State } from './messages/types'
 import { executeMessage, clearAllReminders } from './messages/controller'
