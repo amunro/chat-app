@@ -3,7 +3,7 @@ import { executeMessage, clearAllReminders } from './controller'
 // TODO: This isn't an explicit thing. VSCode isn't recognizing these as globals...
 import { jest, describe, expect, test, beforeEach } from '@jest/globals'
 
-describe.only('Messages', function(){
+describe('Messages', function(){
 
     describe('executeMessage', function(){
 
@@ -19,6 +19,7 @@ describe.only('Messages', function(){
             };
 
             state = {
+                userId: 'abc-123',
                 reminders: [],
                 nextId: 1,
                 tacos: 0
@@ -146,6 +147,7 @@ describe.only('Messages', function(){
             };
 
             state = {
+                userId: 'abc-123',
                 reminders: [reminder],
                 nextId: 1,
                 tacos: 0
