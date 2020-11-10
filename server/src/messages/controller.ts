@@ -58,7 +58,7 @@ const callbacks: ExecutorInterface = {
 
             const timeout = setTimeout(() => {
                 state.reminders = state.reminders.filter((r) => r.id !== id);
-                Events.emit('send-message', `It is time to ${text}!`);
+                Events.emitMessage(state.userId, `It is time to ${text}!`);
             }, seconds * 1000);
 
             state.reminders.push({ id, date, text, timeout });

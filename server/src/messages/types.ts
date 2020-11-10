@@ -34,6 +34,7 @@ export type Reminder = {
 };
 
 export type State = {
+  userId: string;
   reminders: Reminder[];
   nextId: number;
   tacos: number;

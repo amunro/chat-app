@@ -1,4 +1,5 @@
 import WebSocket from 'ws';
+import { v4 as uuid } from 'uuid';
 import { Events } from './events'
 import { State } from './messages/types'
 import { executeMessage, clearAllReminders } from './messages/controller'
@@ -7,23 +8,25 @@ import Parser from './parser/controller'
 // Websocket wrapper
 export default (ws: WebSocket) => {
  
-  const state: State = { nextId: 1, reminders: [], tacos: 0 };
+  const userId = uuid();
+  const state: State = { userId, nextId: 1, reminders: [], tacos: 0 };
 
-  Events.setWS(ws);
-  Events.emit('send-message', 'Greetings, friend! Type <tt>help</tt> to get started.');
+  Events.addClient(userId, ws);
+  Events.emitMessage(userId, 'Greetings, friend! Type <tt>help</tt> to get started.');
 
   ws.on('message', (rawMessage) => {
     const message = Parser(rawMessage.toString());
     let response;
     try {
       response = executeMessage(state, message);
-      Events.emit('send-message', response);
+      Events.emitMessage(userId, response);
     } catch (e) {
-      Events.emit('send-message', 'Sorry, I didn\'t quite get that.  Type <tt>help</tt> to see a list of commands.');
+      Events.emitMessage(userId, 'Sorry, I didn\'t quite get that.  Type <tt>help</tt> to see a list of commands.');
     }
   });
 
   ws.on('close', () => {
+    Events.removeClient(state.userId)
     clearAllReminders(state);
   });  
 
@@ -35,12 +38,4 @@ export default (ws: WebSocket) => {
 // callbacks for the scheduled reminders and allows us to better 
 // transition this code into a worker pattern or alternate service
 // should the websockets require dedicated infra resourcing
-Events.on('send-message', (message: String) => {
-
-  // I also wanted to switch comms over from strings to JSON for the 
-  // sake of overall platform communication consistency and data
-  // scalability 
-  const response = JSON.stringify({ message })
-  Events.ws.send(response)
-
-});
+Events.on('send-message', Events.processEvent);
